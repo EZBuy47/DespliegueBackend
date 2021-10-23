@@ -17,13 +17,38 @@ var corsOptions = {
 }
 
 require('dotenv').config()
-const userSchema = new mongoose.Schema({
-    username: String,
-    name: String,
+const User=require("./models/User");
+
+const userSchema = mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        min: 6,
+        max: 255
+    },
+    email: {
+        type: String,
+        required: true,
+        min: 6,
+        max: 1024
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 6
+    },
+    rol:{
+        type: String,
+        require: true
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    },
     googleId: String,
     secret: String,
     alreadyRegistered: { type: Boolean, default: false }
-});
+})
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
 const app = express();
@@ -94,14 +119,28 @@ passport.use(new GoogleStrategy({
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
 },
     function (accessToken, refreshToken, profile, cb) {
-
-        console.log(profile.emails[0].value);
+        setCurrentEmail(profile.emails[0].value);
+        setCurrentName(profile.displayName);
         UserGoogle.findOrCreate({ googleId: profile.id, username: profile.id }, function (err, user) {
             return cb(err, user);
         });
     }
 ));
+var Currentemail;
+var CurrentName;
+function setCurrentEmail(word){
+    Currentemail=word;
+    console.log(Currentemail);
+   }
+function setCurrentName(word2){
+    CurrentName=word2;
+    console.log(CurrentName);
+   }
 
+app.get("/obtainnameemail",(req,res)=>{
+    res.send({name:CurrentName,email:Currentemail});
+
+})
 app.get("/auth/google", passport.authenticate("google", { scope: ['profile', 'email'] }));
 var currentUserId = "";
 
@@ -109,16 +148,22 @@ function setCurrentUserId(word) {
     currentUserId = word;
     console.log("PRE TESTING:" + currentUserId);
 }
+var currentEstado;
+function setEstado(word){currentEstado=word;}
 app.get("/auth/google/callback",
     passport.authenticate("google", { failureRedirect: "http://localhost:3000" }),
     function (req, res) {
         // Successful authentication, redirect secrets.
         /*if(!req.user.alreadyRegistered)res.redirect(`http://localhost:3000/Register/${req.user._id}`);*/
-        res.redirect('http://localhost:3000/home');
-
+        res.redirect('http://localhost:3000/LoginGoogle');
+        
         console.log("Exito")
     });
 
+app.get('/obtainstate',(req,res)=>{
+    res.send(currentEstado);
+    console.log("ESTADO"+currentEstado)
+})
 
 app.get('/currentuserid', (req, res) => {
     res.send(currentUserId);

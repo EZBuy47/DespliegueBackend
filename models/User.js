@@ -26,7 +26,10 @@ const userSchema = mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
-    }
+    },
+    googleId: String,
+    secret: String,
+    alreadyRegistered: { type: Boolean, default: false }
 })
 
 module.exports = mongoose.model('User', userSchema);
